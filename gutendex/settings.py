@@ -169,10 +169,10 @@ MANAGERS = [
 
 
 # Email
-EMAIL_HOST = env('EMAIL_HOST')
-EMAIL_HOST_ADDRESS = env('EMAIL_HOST_ADDRESS')
-EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
-EMAIL_HOST_USER = env('EMAIL_HOST_USER')
+EMAIL_HOST = 'localhost'
+EMAIL_HOST_ADDRESS = 'root@localhost'
+EMAIL_HOST_PASSWORD = ''
+EMAIL_HOST_USER = ''
 
 
 # Directory paths for catalog files and updater
