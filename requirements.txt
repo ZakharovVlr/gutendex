@@ -9,3 +9,4 @@ six==1.17.0
 sqlparse>=0.5.0 # not directly required, pinned by Snyk to avoid a vulnerability
 dj-database-url
 django-cors-headers
+gunicorn
