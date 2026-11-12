@@ -95,12 +95,15 @@ class BookViewSet(viewsets.ModelViewSet):
         search_string = self.request.GET.get('search')
         if search_string is not None:
             search_string = search_string.replace('\x00', '')
-            search_terms = search_string.split(' ')
+            search_terms = [term for term in search_string.split(' ') if term]
             for term in search_terms[:4]:
-                queryset = queryset.filter(
-                    Q(authors__name__icontains=term) | Q(title__icontains=term)
+                author_subquery = Person.objects.filter(
+                    book=OuterRef('pk'),
+                    name__icontains=term,
                 )
-            needs_distinct = True
+                queryset = queryset.filter(
+                    Q(title__icontains=term) | Exists(author_subquery)
+                )
 
         topic = self.request.GET.get('topic')
         if topic is not None:
@@ -119,3 +122,4 @@ class BookViewSet(viewsets.ModelViewSet):
         if needs_distinct:
             return queryset.distinct()
         return queryset
+
