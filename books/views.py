@@ -1,4 +1,4 @@
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 
 from rest_framework import exceptions as drf_exceptions, viewsets
 
@@ -18,6 +18,7 @@ class BookViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = self.queryset
+        needs_distinct = False
 
         sort = self.request.GET.get('sort')
         if sort == 'ascending':
@@ -37,6 +38,7 @@ class BookViewSet(viewsets.ModelViewSet):
                 Q(authors__birth_year__lte=author_year_end) |
                 Q(authors__death_year__lte=author_year_end)
             )
+            needs_distinct = True
 
         author_year_start = self.request.GET.get('author_year_start')
         try:
@@ -48,6 +50,7 @@ class BookViewSet(viewsets.ModelViewSet):
                 Q(authors__birth_year__gte=author_year_start) |
                 Q(authors__death_year__gte=author_year_start)
             )
+            needs_distinct = True
 
         copyright_parameter = self.request.GET.get('copyright')
         if copyright_parameter is not None:
@@ -78,11 +81,16 @@ class BookViewSet(viewsets.ModelViewSet):
         language_string = self.request.GET.get('languages')
         if language_string is not None:
             language_codes = [code.lower() for code in language_string.split(',')]
-            queryset = queryset.filter(languages__code__in=language_codes)
+            language_subquery = Language.objects.filter(
+                book=OuterRef('pk'),
+                code__in=language_codes,
+            )
+            queryset = queryset.filter(Exists(language_subquery))
 
         mime_type = self.request.GET.get('mime_type')
         if mime_type is not None:
             queryset = queryset.filter(format__mime_type__startswith=mime_type)
+            needs_distinct = True
 
         search_string = self.request.GET.get('search')
         if search_string is not None:
@@ -92,11 +100,22 @@ class BookViewSet(viewsets.ModelViewSet):
                 queryset = queryset.filter(
                     Q(authors__name__icontains=term) | Q(title__icontains=term)
                 )
+            needs_distinct = True
 
         topic = self.request.GET.get('topic')
         if topic is not None:
+            bookshelf_subquery = Bookshelf.objects.filter(
+                book=OuterRef('pk'),
+                name__icontains=topic,
+            )
+            subject_subquery = Subject.objects.filter(
+                book=OuterRef('pk'),
+                name__icontains=topic,
+            )
             queryset = queryset.filter(
-                Q(bookshelves__name__icontains=topic) | Q(subjects__name__icontains=topic)
+                Exists(bookshelf_subquery) | Exists(subject_subquery)
             )
 
-        return queryset.distinct()
+        if needs_distinct:
+            return queryset.distinct()
+        return queryset
