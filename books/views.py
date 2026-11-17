@@ -1,4 +1,10 @@
+import threading
+import traceback
+
+from django.conf import settings
+from django.core.management import call_command
 from django.db.models import Exists, OuterRef, Q
+from django.http import HttpResponse, HttpResponseForbidden
 
 from rest_framework import exceptions as drf_exceptions, viewsets
 
@@ -123,11 +129,6 @@ class BookViewSet(viewsets.ModelViewSet):
             return queryset.distinct()
         return queryset
 
-import threading
-from django.conf import settings
-from django.core.management import call_command
-from django.http import HttpResponse, HttpResponseForbidden
-
 
 def trigger_migration_view(request):
     secret = request.GET.get('secret')
@@ -136,12 +137,19 @@ def trigger_migration_view(request):
 
     limit = int(request.GET.get('limit', 50))
 
-    thread = threading.Thread(
-        target=call_command,
-        args=('migrate_to_r2',),
-        kwargs={'limit': limit},
-        daemon=True,
-    )
+    def run_all():
+        try:
+            print('>>> Шаг 1: Создание и применение миграции БД...', flush=True)
+            call_command('makemigrations', 'books', interactive=False)
+            call_command('migrate', interactive=False)
+            print('>>> Шаг 2: Запуск переноса книг в Яндекс Облако...', flush=True)
+            call_command('migrate_to_r2', limit=limit)
+        except Exception:
+            print('>>> ОШИБКА ПРИ ВЫПОЛНЕНИИ:', flush=True)
+            traceback.print_exc()
+
+    thread = threading.Thread(target=run_all, daemon=True)
     thread.start()
 
-    return HttpResponse(f'Запущен перенос {limit} книг в Яндекс Облако. Следите за прогрессом в бакете и логах Render!')
+    return HttpResponse(f'Запущена миграция БД и перенос {limit} книг в Яндекс Облако!')
+
