@@ -37,14 +37,19 @@ class Bookshelf(models.Model):
 
 class Format(models.Model):
     book = models.ForeignKey('Book', on_delete=models.CASCADE)
-    mime_type = models.CharField(max_length=32)
-    url = models.CharField(max_length=256)
+    mime_type = models.CharField(max_length=64)  # Увеличим до 64, т.к. встречаются длинные типы
+    url = models.CharField(max_length=512, blank=True)
+    file = models.FileField(upload_to='books_files/', blank=True, null=True)
+
+    def get_url(self):
+        # Если файл загружен в наше хранилище R2 — отдаем ссылку на него, иначе старый url
+        if self.file:
+            return self.file.url
+        return self.url
 
     def __str__(self):
-        return "%s (%s)" % (
-            self.mime_type,
-            self.book.__str__()
-        )
+        return f"{self.mime_type} ({self.book})"
+
 
 
 class Language(models.Model):
