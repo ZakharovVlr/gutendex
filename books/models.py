@@ -25,8 +25,7 @@ class Book(models.Model):
     def __str__(self):
         if self.title:
             return self.title
-        else:
-            return str(self.id)
+        return str(self.id)
 
     def get_formats(self):
         return Format.objects.filter(book_id=self.id)
@@ -42,21 +41,24 @@ class Bookshelf(models.Model):
         return self.name
 
 
+def book_file_path(instance, filename):
+    folder = instance.book.gutenberg_id or instance.book.id or 'unsorted'
+    return f'books_files/{folder}/{filename}'
+
+
 class Format(models.Model):
     book = models.ForeignKey('Book', on_delete=models.CASCADE)
-    mime_type = models.CharField(max_length=64)  # Увеличим до 64, т.к. встречаются длинные типы
+    mime_type = models.CharField(max_length=64)
     url = models.CharField(max_length=512, blank=True)
-    file = models.FileField(upload_to='books_files/', blank=True, null=True)
+    file = models.FileField(upload_to=book_file_path, blank=True, null=True)
 
     def get_url(self):
-        # Если файл загружен в наше хранилище R2 — отдаем ссылку на него, иначе старый url
         if self.file:
             return self.file.url
         return self.url
 
     def __str__(self):
         return f"{self.mime_type} ({self.book})"
-
 
 
 class Language(models.Model):
@@ -89,3 +91,4 @@ class Summary(models.Model):
     def __str__(self):
         preview_len = 24
         return f'{self.text[:preview_len]}...' if len(self.text) > preview_len else self.text
+
