@@ -147,6 +147,30 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
+# Cloudflare R2 Storage Settings
+AWS_ACCESS_KEY_ID = env('R2_ACCESS_KEY_ID', default='')
+AWS_SECRET_ACCESS_KEY = env('R2_SECRET_ACCESS_KEY', default='')
+AWS_STORAGE_BUCKET_NAME = env('R2_BUCKET_NAME', default='')
+AWS_S3_ENDPOINT_URL = env('R2_ENDPOINT_URL', default='')  # https://<account_id>.r2.cloudflarestorage.com
+AWS_S3_CUSTOM_DOMAIN = env('R2_PUBLIC_DOMAIN', default='')  # pub-xxxx.r2.dev (без https://)
+AWS_S3_REGION_NAME = 'auto'
+AWS_S3_SIGNATURE_VERSION = 's3v4'
+AWS_DEFAULT_ACL = None
+AWS_QUERYSTRING_AUTH = False  # Чтобы ссылки на обложки были чистыми и вечными
+
+if AWS_STORAGE_BUCKET_NAME:
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
+    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
+else:
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+    MEDIA_URL = '/media/'
 
 # User-uploaded files
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
