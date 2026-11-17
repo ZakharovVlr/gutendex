@@ -1,7 +1,9 @@
+import os
 import threading
 import traceback
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.db.models import Exists, OuterRef, Q
 from django.http import HttpResponse, HttpResponseForbidden
@@ -142,6 +144,14 @@ def trigger_migration_view(request):
             print('>>> Шаг 1: Создание и применение миграции БД...', flush=True)
             call_command('makemigrations', 'books', interactive=False)
             call_command('migrate', interactive=False)
+
+            User = get_user_model()
+            admin_user = os.environ.get('ADMIN_USER', 'admin')
+            admin_pass = os.environ.get('ADMIN_PASS')
+            if admin_pass and not User.objects.filter(username=admin_user).exists():
+                User.objects.create_superuser(username=admin_user, email='', password=admin_pass)
+                print(f'>>> Суперпользователь {admin_user} создан!', flush=True)
+
             print('>>> Шаг 2: Запуск переноса книг в Яндекс Облако...', flush=True)
             call_command('migrate_to_r2', limit=limit)
         except Exception:
@@ -151,5 +161,6 @@ def trigger_migration_view(request):
     thread = threading.Thread(target=run_all, daemon=True)
     thread.start()
 
-    return HttpResponse(f'Запущена миграция БД и перенос {limit} книг в Яндекс Облако!')
+    return HttpResponse(f'Запущена миграция БД, проверка админа и перенос {limit} книг в Яндекс Облако!')
+
 
