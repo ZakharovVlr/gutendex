@@ -76,7 +76,8 @@ class BookSerializer(serializers.ModelSerializer):
         return bookshelves
 
     def get_formats(self, book):
-        return {f.mime_type: f.url for f in book.get_formats()}
+        return {f.mime_type: f.get_url() for f in book.get_formats() if f.get_url()}
+
 
     def get_id(self, book):
         return book.gutenberg_id
