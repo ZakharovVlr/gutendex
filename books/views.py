@@ -123,3 +123,25 @@ class BookViewSet(viewsets.ModelViewSet):
             return queryset.distinct()
         return queryset
 
+import threading
+from django.conf import settings
+from django.core.management import call_command
+from django.http import HttpResponse, HttpResponseForbidden
+
+
+def trigger_migration_view(request):
+    secret = request.GET.get('secret')
+    if not secret or secret != settings.SECRET_KEY:
+        return HttpResponseForbidden('Неверный секретный ключ')
+
+    limit = int(request.GET.get('limit', 50))
+
+    thread = threading.Thread(
+        target=call_command,
+        args=('migrate_to_r2',),
+        kwargs={'limit': limit},
+        daemon=True,
+    )
+    thread.start()
+
+    return HttpResponse(f'Запущен перенос {limit} книг в Яндекс Облако. Следите за прогрессом в бакете и логах Render!')
