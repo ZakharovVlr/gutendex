@@ -2,28 +2,29 @@ import time
 import requests
 from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
+from django.db.models import Q
 from books.models import Book, Format
 
 
 class Command(BaseCommand):
-    help = 'Переносит обложки и файлы книг из Gutenberg в Cloudflare R2'
+    help = 'Переносит обложки и файлы книг из Gutenberg в Яндекс Облако'
 
     def add_arguments(self, parser):
-        parser.add_argument('--limit', type=int, default=100, help='Сколько книг перенести за один запуск')
+        parser.add_argument('--limit', type=int, default=50)
 
     def handle(self, *args, **options):
         limit = options['limit']
-        # Берем самые популярные книги, у которых еще нет локального файла обложки в R2
-        books = Book.objects.order_by('-download_count')[:limit]
+        print(f'=== СТАРТ ПЕРЕНОСА (лимит: {limit}) ===', flush=True)
 
+        books = Book.objects.order_by('-download_count')[:limit]
         headers = {'User-Agent': 'Mozilla/5.0 (compatible; ColbookLibrary/1.0)'}
 
         for book in books:
             formats = Format.objects.filter(
                 book=book,
                 mime_type__in=['image/jpeg', 'text/html', 'application/epub+zip'],
-                file=''
-            )
+            ).filter(Q(file='') | Q(file__isnull=True))
+
             for fmt in formats:
                 if not fmt.url or 'gutenberg.org' not in fmt.url:
                     continue
@@ -35,7 +36,10 @@ class Command(BaseCommand):
                     filename = f"{book.gutenberg_id or book.id}_{ext}.{ext}"
 
                     fmt.file.save(filename, ContentFile(resp.content), save=True)
-                    self.stdout.write(self.style.SUCCESS(f'OK: {book.title[:30]} -> {filename}'))
-                    time.sleep(0.3)  # Пауза, чтобы Gutenberg не банил за частые запросы
+                    print(f'OK: {book.title[:30]} -> {filename}', flush=True)
+                    time.sleep(0.3)
                 except Exception as e:
-                    self.stdout.write(self.style.WARNING(f'Skip {fmt.url}: {e}'))
+                    print(f'SKIP {fmt.url}: {e}', flush=True)
+
+        print('=== ПЕРЕНОС ЗАВЕРШЕН ===', flush=True)
+
