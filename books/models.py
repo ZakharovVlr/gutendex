@@ -2,18 +2,25 @@ from django.db import models
 
 
 class Book(models.Model):
-    authors = models.ManyToManyField('Person')
-    bookshelves = models.ManyToManyField('Bookshelf')
-    copyright = models.BooleanField(null=True)
-    download_count = models.PositiveIntegerField(blank=True, null=True)
-    editors = models.ManyToManyField("Person", related_name="books_edited")
-    gutenberg_id = models.PositiveIntegerField(unique=True)
-    languages = models.ManyToManyField('Language')
-    media_type = models.CharField(max_length=16)
-    subjects = models.ManyToManyField('Subject')
+    authors = models.ManyToManyField('Person', blank=True)
+    bookshelves = models.ManyToManyField('Bookshelf', blank=True)
+    copyright = models.BooleanField(null=True, blank=True)
+    download_count = models.PositiveIntegerField(default=0, blank=True, null=True)
+    editors = models.ManyToManyField("Person", related_name="books_edited", blank=True)
+    gutenberg_id = models.PositiveIntegerField(unique=True, blank=True, null=True)
+    languages = models.ManyToManyField('Language', blank=True)
+    media_type = models.CharField(max_length=16, default='Text')
+    subjects = models.ManyToManyField('Subject', blank=True)
     title = models.CharField(blank=True, max_length=1024, null=True)
     translators = models.ManyToManyField(
-        'Person', related_name='books_translated')
+        'Person', related_name='books_translated', blank=True)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Если gutenberg_id не указан (наша собственная книга), ставим 1000000 + id
+        if not self.gutenberg_id:
+            self.gutenberg_id = 1000000 + self.id
+            Book.objects.filter(pk=self.pk).update(gutenberg_id=self.gutenberg_id)
 
     def __str__(self):
         if self.title:
