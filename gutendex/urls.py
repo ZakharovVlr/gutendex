@@ -1,10 +1,10 @@
-from django.urls import include, re_path
+from django.urls import include, path, re_path
 from django.views.generic import TemplateView
 
 from rest_framework import routers
 
 from books import views
-from books.proxy import proxy_image  # добавить импорт
+from books.proxy import proxy_image
 from books.views import trigger_migration_view
 
 router = routers.DefaultRouter()
@@ -16,3 +16,4 @@ urlpatterns = [
     re_path(r'^proxy-image/$', proxy_image, name='proxy-image'),
     path('trigger-migration/', trigger_migration_view),
 ]
+
