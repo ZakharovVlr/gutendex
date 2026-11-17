@@ -147,16 +147,17 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
-# Cloudflare R2 Storage Settings
+# Yandex Object Storage (S3) Settings
 AWS_ACCESS_KEY_ID = env('R2_ACCESS_KEY_ID', default='')
 AWS_SECRET_ACCESS_KEY = env('R2_SECRET_ACCESS_KEY', default='')
 AWS_STORAGE_BUCKET_NAME = env('R2_BUCKET_NAME', default='')
-AWS_S3_ENDPOINT_URL = env('R2_ENDPOINT_URL', default='')  # https://<account_id>.r2.cloudflarestorage.com
-AWS_S3_CUSTOM_DOMAIN = env('R2_PUBLIC_DOMAIN', default='')  # pub-xxxx.r2.dev (без https://)
-AWS_S3_REGION_NAME = 'auto'
+AWS_S3_ENDPOINT_URL = env('R2_ENDPOINT_URL', default='')
+AWS_S3_CUSTOM_DOMAIN = env('R2_PUBLIC_DOMAIN', default='')
+AWS_S3_REGION_NAME = 'ru-central1'
 AWS_S3_SIGNATURE_VERSION = 's3v4'
+AWS_S3_ADDRESSING_STYLE = 'virtual'
 AWS_DEFAULT_ACL = None
-AWS_QUERYSTRING_AUTH = False  # Чтобы ссылки на обложки были чистыми и вечными
+AWS_QUERYSTRING_AUTH = False
 
 if AWS_STORAGE_BUCKET_NAME:
     STORAGES = {
