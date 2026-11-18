@@ -91,4 +91,18 @@ class Summary(models.Model):
     def __str__(self):
         preview_len = 24
         return f'{self.text[:preview_len]}...' if len(self.text) > preview_len else self.text
+        
+class PageLine(models.Model):
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='lines')
+    page_number = models.PositiveIntegerField()
+    line_index = models.PositiveIntegerField()  # порядок строки на странице
+    bbox_x0 = models.IntegerField()
+    bbox_y0 = models.IntegerField()
+    bbox_x1 = models.IntegerField()
+    bbox_y1 = models.IntegerField()
+    source_text = models.TextField()
+    translated_ru = models.TextField(blank=True)
+    translated_en = models.TextField(blank=True)
 
+    class Meta:
+        ordering = ['page_number', 'line_index']
