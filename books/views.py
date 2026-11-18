@@ -164,3 +164,26 @@ def trigger_migration_view(request):
     return HttpResponse(f'Запущена миграция БД, проверка админа и перенос {limit} книг в Яндекс Облако!')
 
 
+def trigger_hocr_ingest_view(request):
+    secret = request.GET.get('secret')
+    if not secret or secret != settings.SECRET_KEY:
+        return HttpResponseForbidden('Неверный секретный ключ')
+
+    book_id = request.GET.get('book_id')
+    hocr_url = request.GET.get('hocr_url')
+    if not book_id or not hocr_url:
+        return HttpResponse('Нужны параметры book_id и hocr_url', status=400)
+
+    def run():
+        try:
+            print(f'>>> Парсинг hOCR для книги {book_id}...', flush=True)
+            call_command('ingest_hocr', book_id, hocr_url)
+            print('>>> Готово!', flush=True)
+        except Exception:
+            print('>>> ОШИБКА ПРИ ПАРСИНГЕ hOCR:', flush=True)
+            traceback.print_exc()
+
+    thread = threading.Thread(target=run, daemon=True)
+    thread.start()
+
+    return HttpResponse(f'Запущен парсинг hOCR для книги {book_id}')
