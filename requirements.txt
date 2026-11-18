@@ -13,4 +13,4 @@ requests
 django-storages[s3]
 boto3
 whitenoise
-
+beautifulsoup4
