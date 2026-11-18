@@ -1,14 +1,27 @@
 # books/management/commands/ingest_hocr.py
 import re
+import urllib.request
+
 from bs4 import BeautifulSoup
 from django.core.management.base import BaseCommand
+
 from books.models import Book, PageLine
 
-def parse_bbox(title: str) -> tuple[int, int, int, int] | None:
+
+def parse_bbox(title: str):
     match = re.search(r'bbox (\d+) (\d+) (\d+) (\d+)', title or '')
     if not match:
         return None
-    return tuple(int(x) for x in match.groups())  # type: ignore[return-value]
+    return tuple(int(x) for x in match.groups())
+
+
+def read_source(path_or_url: str) -> str:
+    if path_or_url.startswith('http://') or path_or_url.startswith('https://'):
+        with urllib.request.urlopen(path_or_url) as response:
+            return response.read().decode('utf-8')
+    with open(path_or_url, encoding='utf-8') as f:
+        return f.read()
+
 
 class Command(BaseCommand):
     help = 'Парсит hOCR-файл книги и сохраняет строки с координатами в БД'
@@ -19,8 +32,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         book = Book.objects.get(id=options['book_id'])
-        with open(options['hocr_path'], encoding='utf-8') as f:
-            soup = BeautifulSoup(f.read(), 'html.parser')
+        soup = BeautifulSoup(read_source(options['hocr_path']), 'html.parser')
 
         PageLine.objects.filter(book=book).delete()
         created = 0
