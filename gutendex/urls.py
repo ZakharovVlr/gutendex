@@ -17,6 +17,7 @@ urlpatterns = [
     re_path(r'^', include(router.urls)),
     re_path(r'^proxy-image/$', proxy_image, name='proxy-image'),
     path('trigger-migration/', trigger_migration_view),
+    path('trigger-hocr-ingest/', trigger_hocr_ingest),
 ]
 
 
