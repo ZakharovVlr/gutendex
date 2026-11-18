@@ -6,7 +6,7 @@ from rest_framework import routers
 
 from books import views
 from books.proxy import proxy_image
-from books.views import trigger_migration_view
+from books.views import trigger_migration_view, trigger_hocr_ingest_view
 
 router = routers.DefaultRouter()
 router.register(r'books', views.BookViewSet)
@@ -17,7 +17,7 @@ urlpatterns = [
     re_path(r'^', include(router.urls)),
     re_path(r'^proxy-image/$', proxy_image, name='proxy-image'),
     path('trigger-migration/', trigger_migration_view),
-    path('trigger-hocr-ingest/', trigger_hocr_ingest),
+    path('trigger-hocr-ingest/', trigger_hocr_ingest_view),
 ]
 
 
